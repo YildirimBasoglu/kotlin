@@ -6947,6 +6947,11 @@ public class IrCodegenBoxWasmTestGenerated extends AbstractIrCodegenBoxWasmTest 
                     runTest("compiler/testData/codegen/box/coroutines/featureIntersection/tailrec/infixRecursiveCall.kt");
                 }
 
+                @TestMetadata("kt38920_localTailrec.kt")
+                public void testKt38920_localTailrec() throws Exception {
+                    runTest("compiler/testData/codegen/box/coroutines/featureIntersection/tailrec/kt38920_localTailrec.kt");
+                }
+
                 @TestMetadata("realIteratorFoldl.kt")
                 public void testRealIteratorFoldl() throws Exception {
                     runTest("compiler/testData/codegen/box/coroutines/featureIntersection/tailrec/realIteratorFoldl.kt");
@@ -8778,6 +8783,11 @@ public class IrCodegenBoxWasmTestGenerated extends AbstractIrCodegenBoxWasmTest 
             @TestMetadata("mixedParams.kt")
             public void testMixedParams() throws Exception {
                 runTest("compiler/testData/codegen/box/dataClasses/toString/mixedParams.kt");
+            }
+
+            @TestMetadata("primitiveArrays.kt")
+            public void testPrimitiveArrays() throws Exception {
+                runTest("compiler/testData/codegen/box/dataClasses/toString/primitiveArrays.kt");
             }
 
             @TestMetadata("unitComponent.kt")
@@ -20467,6 +20477,11 @@ public class IrCodegenBoxWasmTestGenerated extends AbstractIrCodegenBoxWasmTest 
             runTest("compiler/testData/codegen/box/primitiveTypes/kt3613.kt");
         }
 
+        @TestMetadata("kt36952_identityEqualsWithBooleanInLocalFunction.kt")
+        public void testKt36952_identityEqualsWithBooleanInLocalFunction() throws Exception {
+            runTest("compiler/testData/codegen/box/primitiveTypes/kt36952_identityEqualsWithBooleanInLocalFunction.kt");
+        }
+
         @TestMetadata("kt37505.kt")
         public void testKt37505() throws Exception {
             runTest("compiler/testData/codegen/box/primitiveTypes/kt37505.kt");
@@ -26684,6 +26699,16 @@ public class IrCodegenBoxWasmTestGenerated extends AbstractIrCodegenBoxWasmTest 
             runTest("compiler/testData/codegen/box/reified/kt16445.kt");
         }
 
+        @TestMetadata("kt36237.kt")
+        public void testKt36237() throws Exception {
+            runTest("compiler/testData/codegen/box/reified/kt36237.kt");
+        }
+
+        @TestMetadata("kt39256_privateInlineWithAnonymousObject.kt")
+        public void testKt39256_privateInlineWithAnonymousObject() throws Exception {
+            runTest("compiler/testData/codegen/box/reified/kt39256_privateInlineWithAnonymousObject.kt");
+        }
+
         @TestMetadata("newArrayInt.kt")
         public void testNewArrayInt() throws Exception {
             runTest("compiler/testData/codegen/box/reified/newArrayInt.kt");
@@ -29726,6 +29751,11 @@ public class IrCodegenBoxWasmTestGenerated extends AbstractIrCodegenBoxWasmTest 
             @TestMetadata("kt27161_string.kt")
             public void testKt27161_string() throws Exception {
                 runTest("compiler/testData/codegen/box/when/whenSubjectVariable/kt27161_string.kt");
+            }
+
+            @TestMetadata("kt33641_inlineClass.kt")
+            public void testKt33641_inlineClass() throws Exception {
+                runTest("compiler/testData/codegen/box/when/whenSubjectVariable/kt33641_inlineClass.kt");
             }
 
             @TestMetadata("rangeCheckOnSubjectVariable.kt")

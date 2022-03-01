@@ -8702,6 +8702,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             @TestDataPath("$PROJECT_ROOT")
             @RunWith(JUnit3RunnerWithInners.class)
             public static class Tailrec extends AbstractLightAnalysisModeTest {
+                @TestMetadata("kt38920_localTailrec.kt")
+                public void ignoreKt38920_localTailrec() throws Exception {
+                    runTest("compiler/testData/codegen/box/coroutines/featureIntersection/tailrec/kt38920_localTailrec.kt");
+                }
+
                 private void runTest(String testDataFilePath) throws Exception {
                     KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM, testDataFilePath);
                 }
@@ -10760,6 +10765,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         @TestDataPath("$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners.class)
         public static class ToString extends AbstractLightAnalysisModeTest {
+            @TestMetadata("primitiveArrays.kt")
+            public void ignorePrimitiveArrays() throws Exception {
+                runTest("compiler/testData/codegen/box/dataClasses/toString/primitiveArrays.kt");
+            }
+
             private void runTest(String testDataFilePath) throws Exception {
                 KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM, testDataFilePath);
             }
@@ -27868,6 +27878,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             runTest("compiler/testData/codegen/box/primitiveTypes/kt3613.kt");
         }
 
+        @TestMetadata("kt36952_identityEqualsWithBooleanInLocalFunction.kt")
+        public void testKt36952_identityEqualsWithBooleanInLocalFunction() throws Exception {
+            runTest("compiler/testData/codegen/box/primitiveTypes/kt36952_identityEqualsWithBooleanInLocalFunction.kt");
+        }
+
         @TestMetadata("kt37505.kt")
         public void testKt37505() throws Exception {
             runTest("compiler/testData/codegen/box/primitiveTypes/kt37505.kt");
@@ -34922,6 +34937,16 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             runTest("compiler/testData/codegen/box/reified/kt16445.kt");
         }
 
+        @TestMetadata("kt36237.kt")
+        public void testKt36237() throws Exception {
+            runTest("compiler/testData/codegen/box/reified/kt36237.kt");
+        }
+
+        @TestMetadata("kt39256_privateInlineWithAnonymousObject.kt")
+        public void testKt39256_privateInlineWithAnonymousObject() throws Exception {
+            runTest("compiler/testData/codegen/box/reified/kt39256_privateInlineWithAnonymousObject.kt");
+        }
+
         @TestMetadata("nestedReified.kt")
         public void testNestedReified() throws Exception {
             runTest("compiler/testData/codegen/box/reified/nestedReified.kt");
@@ -39154,6 +39179,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             @TestMetadata("kt27161_string.kt")
             public void testKt27161_string() throws Exception {
                 runTest("compiler/testData/codegen/box/when/whenSubjectVariable/kt27161_string.kt");
+            }
+
+            @TestMetadata("kt33641_inlineClass.kt")
+            public void testKt33641_inlineClass() throws Exception {
+                runTest("compiler/testData/codegen/box/when/whenSubjectVariable/kt33641_inlineClass.kt");
             }
 
             @TestMetadata("rangeCheckOnSubjectVariable.kt")
