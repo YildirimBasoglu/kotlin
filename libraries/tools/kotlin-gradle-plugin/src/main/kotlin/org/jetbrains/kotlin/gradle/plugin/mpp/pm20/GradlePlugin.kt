@@ -18,7 +18,9 @@ import org.gradle.util.GradleVersion
 import org.jetbrains.kotlin.gradle.dsl.KotlinTopLevelExtension
 import org.jetbrains.kotlin.gradle.dsl.pm20Extension
 import org.jetbrains.kotlin.gradle.internal.customizeKotlinDependencies
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder
 import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilderImpl
+import org.jetbrains.kotlin.gradle.kpm.idea.default
 import org.jetbrains.kotlin.gradle.utils.checkGradleCompatibility
 import java.io.ByteArrayOutputStream
 import java.io.ObjectOutputStream
@@ -86,6 +88,7 @@ abstract class KotlinPm20GradlePlugin @Inject constructor(
         project.tasks.register("buildIdeaKotlinProjectModel") { task ->
             val outputDir = project.buildDir.resolve("ideaKotlinProjectModel")
             task.outputs.dir(outputDir)
+            task.outputs.upToDateWhen { false }
             task.doLast {
                 outputDir.mkdirs()
                 val model = project.pm20Extension.ideaKotlinProjectModelBuilder.buildIdeaKotlinProjectModel()
@@ -109,7 +112,7 @@ open class KotlinPm20ProjectExtension(project: Project) : KotlinTopLevelExtensio
 
     internal val kpmModelContainer = DefaultKpmGradleProjectModelContainer.create(project)
 
-    internal val ideaKotlinProjectModelBuilder by lazy { IdeaKotlinProjectModelBuilderImpl(this) }
+    internal val ideaKotlinProjectModelBuilder by lazy { IdeaKotlinProjectModelBuilder.default(this) }
 
     val modules: NamedDomainObjectContainer<KotlinGradleModule>
         get() = project.kpmModules

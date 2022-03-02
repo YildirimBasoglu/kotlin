@@ -8,6 +8,12 @@
 package org.jetbrains.kotlin.gradle.kpm.idea
 
 import org.jetbrains.kotlin.gradle.kpm.external.ExternalVariantApi
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.MetadataBinaryResolution
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.PlatformBinaryResolution
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolverMode.Collaborative
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolverMode.Terminal
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolverPriority.High
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolverPriority.Medium
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.FragmentAttributes
 
@@ -31,7 +37,7 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle(
     class VariantDslHandle {
 
         @ExternalVariantPlatformDependencyResolutionDsl
-        var variantBinaryType: String = IdeaKotlinFragmentBinaryDependency.CLASSPATH_BINARY_TYPE
+        var variantBinaryType: String = IdeaKotlinDependency.CLASSPATH_BINARY_TYPE
 
         @ExternalVariantPlatformDependencyResolutionDsl
         var variantAttributes: FragmentAttributes<KotlinGradleFragment> = FragmentAttributes { }
@@ -56,11 +62,31 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle(
     @ExternalVariantPlatformDependencyResolutionDsl
     fun variant(configure: VariantDslHandle.() -> Unit) {
         val variant = VariantDslHandle().apply(configure)
-        toolingModelBuilder.registerPlatformDependencyResolver(
-            IdeaKotlinPlatformDependencyResolver(
+        toolingModelBuilder.registerDependencyResolver(
+            resolver = IdeaKotlinDependencyResolver.Empty,
+            constraint = constraint,
+            phase = MetadataBinaryResolution,
+            priority = High,
+            mode = Terminal
+        )
+
+        toolingModelBuilder.registerDependencyResolver(
+            resolver = IdeaKotlinDependencyResolver.Empty,
+            constraint = constraint,
+            phase = PlatformBinaryResolution,
+            priority = Medium,
+            mode = Terminal
+        )
+
+        toolingModelBuilder.registerDependencyResolver(
+            resolver = IdeaKotlinPlatformDependencyResolver(
                 binaryType = variant.variantBinaryType,
-                attributes = variant.variantAttributes
-            ).withConstraint(constraint)
+                artifactViewAttributes = variant.variantAttributes
+            ),
+            phase = PlatformBinaryResolution,
+            constraint = constraint,
+            priority = High,
+            mode = Collaborative
         )
     }
 }

@@ -16,13 +16,13 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.FragmentAttributes
 
 class IdeaKotlinPlatformDependencyResolver(
-    private val binaryType: String = IdeaKotlinFragmentBinaryDependency.CLASSPATH_BINARY_TYPE,
-    private val attributes: FragmentAttributes<KotlinGradleFragment> = FragmentAttributes { }
+    private val binaryType: String = IdeaKotlinDependency.CLASSPATH_BINARY_TYPE,
+    private val artifactViewAttributes: FragmentAttributes<KotlinGradleFragment> = FragmentAttributes { }
 ) : IdeaKotlinDependencyResolver {
 
-    override fun resolve(fragment: KotlinGradleFragment): Set<IdeaKotlinFragmentBinaryDependency> {
+    override fun resolve(fragment: KotlinGradleFragment): Set<IdeaKotlinBinaryDependency> {
         val artifacts = resolvableDependencies(fragment).artifactView { view ->
-            attributes.setAttributes(view.attributes, fragment)
+            artifactViewAttributes.setAttributes(view.attributes, fragment)
             view.isLenient = true
             view.componentFilter { id -> id !is ProjectComponentIdentifier }
         }.artifacts
@@ -32,18 +32,18 @@ class IdeaKotlinPlatformDependencyResolver(
             .map { reason ->
                 val selector = (reason as? ModuleVersionResolveException)?.selector as? ModuleComponentSelector
                 /* Can't figure out the dependency here :( */
-                    ?: return@map IdeaKotlinFragmentUnresolvedBinaryDependencyImpl(
+                    ?: return@map IdeaKotlinUnresolvedBinaryDependencyImpl(
                         coordinates = null, cause = reason.message?.takeIf { it.isNotBlank() }
                     )
 
-                IdeaKotlinFragmentUnresolvedBinaryDependencyImpl(
+                IdeaKotlinUnresolvedBinaryDependencyImpl(
                     coordinates = IdeaKotlinBinaryCoordinatesImpl(selector.group, selector.module, selector.version),
                     cause = reason.message?.takeIf { it.isNotBlank() }
                 )
             }.toSet()
 
         val resolvedDependencies = artifacts.artifacts.mapNotNull { artifact ->
-            IdeaKotlinFragmentResolvedBinaryDependencyImpl(
+            IdeaKotlinResolvedBinaryDependencyImpl(
                 coordinates = artifact.variant.owner.ideaKotlinBinaryCoordinates,
                 binaryType = binaryType,
                 binaryFile = artifact.file
@@ -70,38 +70,11 @@ class IdeaKotlinPlatformDependencyResolver(
             fragment.transitiveImplementationConfiguration.allDependencies.filter { it !is ProjectDependency }
         )
 
-        attributes.setAttributes(fragmentCompileDependencies.attributes, fragment)
+        artifactViewAttributes.setAttributes(fragmentCompileDependencies.attributes, fragment)
 
-        val allModuleCompileDependencies = fragment.project.configurations.getByName(fragment.containingModule.resolvableMetadataConfigurationName)
+        val allModuleCompileDependencies =
+            fragment.project.configurations.getByName(fragment.containingModule.resolvableMetadataConfigurationName)
         fragmentCompileDependencies.shouldResolveConsistentlyWith(allModuleCompileDependencies)
-
-        /*val fragmentCompileDependenciesName = fragment.disambiguateName("transitiveCompileDependencies")
-        val fragmentCompileDependencies =
-            fragment.project.configurations.findByName(fragmentCompileDependenciesName)
-                ?: fragment.project.configurations.create(fragmentCompileDependenciesName) { configuration ->
-                    configuration.isCanBeConsumed = false
-                    configuration.isCanBeResolved = true
-
-                    /*
-                    configuration.attributes.attribute(
-                        BuildTypeAttr.ATTRIBUTE, fragment.project.objects.named("shared")
-                    )
-
-                     */
-
-                    configuration.attributes.attribute(
-                        TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-                        fragment.project.objects.named(TargetJvmEnvironment.ANDROID)
-                    )
-                    configuration.attributes.attribute(Usage.USAGE_ATTRIBUTE, fragment.project.usageByName(Usage.JAVA_API))
-                    configuration.attributes.attribute(KotlinPlatformType.attribute, KotlinPlatformType.androidJvm)
-
-                    configuration.shouldResolveConsistentlyWith(moduleCompileDependencies)
-                    configuration.extendsFrom(fragment.transitiveImplementationConfiguration)
-                    configuration.extendsFrom(fragment.transitiveApiConfiguration)
-                }
-
-         */
 
 
         return fragmentCompileDependencies.incoming

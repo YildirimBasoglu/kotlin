@@ -14,13 +14,13 @@ internal object IdeaKotlinSinglePlatformStdlibCommonFilter : IdeaKotlinDependenc
 
     override fun transform(
         fragment: KotlinGradleFragment,
-        dependencies: Set<IdeaKotlinFragmentDependency>
-    ): Set<IdeaKotlinFragmentDependency> {
+        dependencies: Set<IdeaKotlinDependency>
+    ): Set<IdeaKotlinDependency> {
         val platforms = fragment.containingModule.variantsContainingFragment(fragment).map { it.platformType }.toSet()
         if (platforms.size != 1) return dependencies
 
         return dependencies.filter { dependency ->
-            val binaryDependency = dependency as? IdeaKotlinFragmentBinaryDependency ?: return@filter true
+            val binaryDependency = dependency as? IdeaKotlinBinaryDependency ?: return@filter true
             val coordinates = binaryDependency.coordinates ?: return@filter true
             coordinates.group != stdlibCoordinatesGroup || coordinates.module !in stdlibCoordinatesModules
         }.toSet()

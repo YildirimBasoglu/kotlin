@@ -9,13 +9,13 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleFragment
 
 interface IdeaKotlinDependencyTransformer {
     fun transform(
-        fragment: KotlinGradleFragment, dependencies: Set<IdeaKotlinFragmentDependency>
-    ): Set<IdeaKotlinFragmentDependency>
+        fragment: KotlinGradleFragment, dependencies: Set<IdeaKotlinDependency>
+    ): Set<IdeaKotlinDependency>
 
     object Empty : IdeaKotlinDependencyTransformer {
         override fun transform(
-            fragment: KotlinGradleFragment, dependencies: Set<IdeaKotlinFragmentDependency>
-        ): Set<IdeaKotlinFragmentDependency> = dependencies
+            fragment: KotlinGradleFragment, dependencies: Set<IdeaKotlinDependency>
+        ): Set<IdeaKotlinDependency> = dependencies
     }
 }
 
@@ -52,8 +52,8 @@ private class CompositeIdeaKotlinDependencyTransformer(
     val transformers: List<IdeaKotlinDependencyTransformer>
 ) : IdeaKotlinDependencyTransformer {
     override fun transform(
-        fragment: KotlinGradleFragment, dependencies: Set<IdeaKotlinFragmentDependency>
-    ): Set<IdeaKotlinFragmentDependency> {
+        fragment: KotlinGradleFragment, dependencies: Set<IdeaKotlinDependency>
+    ): Set<IdeaKotlinDependency> {
         return transformers.fold(dependencies) { currentDependencies, transformer -> transformer.transform(fragment, currentDependencies) }
     }
 }

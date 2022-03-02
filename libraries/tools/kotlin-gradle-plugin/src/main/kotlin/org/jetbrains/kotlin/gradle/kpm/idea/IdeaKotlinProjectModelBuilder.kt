@@ -1,3 +1,5 @@
+@file:OptIn(ExternalVariantApi::class)
+
 package org.jetbrains.kotlin.gradle.kpm.idea
 
 import org.gradle.api.Project
@@ -6,8 +8,16 @@ import org.jetbrains.kotlin.compilerRunner.konanHome
 import org.jetbrains.kotlin.gradle.kpm.external.ExternalVariantApi
 import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinDependencyResolverConstraint.Companion.isSharedNativeFragment
 import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinDependencyResolverConstraint.Companion.isSinglePlatformTypeFragment
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinDependencyResolverConstraint.Companion.isVariant
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinDependencyResolverConstraint.Companion.unconstrained
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.*
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.*
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolverMode.Collaborative
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolverMode.Terminal
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
+import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.FragmentGranularMetadataResolverFactory
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinPm20ProjectExtension
+import org.jetbrains.kotlin.gradle.utils.UnsafeApi
 import java.io.File
 
 internal interface IdeaKotlinProjectModelBuildingContext {
@@ -19,68 +29,92 @@ internal interface IdeaKotlinProjectModelBuildingContext {
 }
 
 interface IdeaKotlinProjectModelBuilder {
-    @ExternalVariantApi
-    fun registerPlatformDependencyResolver(resolver: IdeaKotlinConstrainedDependencyResolver)
+
+    enum class DependencyResolutionPhase {
+        PreDependencyResolution,
+        SourceDependencyResolution,
+        MetadataBinaryResolution,
+        PlatformBinaryResolution,
+        PostDependencyResolution
+    }
+
+    enum class DependencyResolverPriority {
+        Low, Medium, High
+    }
+
+    enum class DependencyResolverMode {
+        Collaborative,
+        Terminal
+    }
+
+    enum class DependencyTransformationPhase {
+        PreDependencyTransformationPhase,
+        FreeDependencyTransformationPhase,
+        DependencyFilteringPhase,
+        PostDependencyTransformationPhase
+    }
 
     @ExternalVariantApi
-    fun registerMetadataDependencyResolver(resolver: IdeaKotlinConstrainedDependencyResolver)
-
-    @ExternalVariantApi
-    fun addAdditionalDependencyResolver(resolver: IdeaKotlinConstrainedDependencyResolver)
-
-    @ExternalVariantApi
-    fun registerDependencyTransformer(transformer: IdeaKotlinDependencyTransformer)
-
-    fun buildIdeaKotlinProjectModel(): IdeaKotlinProjectModel
-}
-
-internal class IdeaKotlinProjectModelBuilderImpl(
-    private val extension: KotlinPm20ProjectExtension,
-
-    private val defaultPlatformDependencyResolver: IdeaKotlinDependencyResolver =
-        IdeaKotlinPlatformDependencyResolver(),
-
-    private val defaultMetadataDependencyResolver: IdeaKotlinDependencyResolver =
-        IdeaKotlinMetadataDependencyResolver(),
-
-    private val defaultAdditionalDependencyResolver: IdeaKotlinDependencyResolver =
-        IdeaKotlinSourcesAndDocumentationResolver(),
-
-    private val defaultDependencyTransformer: IdeaKotlinDependencyTransformer = IdeaKotlinDependencyTransformer(
-        IdeaKotlinSinglePlatformStdlibCommonFilter,
-        IdeaKotlinUnusedSourcesAndDocumentationFilter,
-        IdeaKotlinDependencyLogger
+    fun registerDependencyResolver(
+        resolver: IdeaKotlinDependencyResolver,
+        constraint: IdeaKotlinDependencyResolverConstraint,
+        phase: DependencyResolutionPhase,
+        priority: DependencyResolverPriority = DependencyResolverPriority.Medium,
+        mode: DependencyResolverMode = Collaborative
     )
 
+    @ExternalVariantApi
+    fun registerDependencyTransformer(
+        transformer: IdeaKotlinDependencyTransformer,
+        phase: DependencyTransformationPhase
+    )
+
+    fun buildIdeaKotlinProjectModel(): IdeaKotlinProjectModel
+
+    companion object
+}
+
+internal class IdeaKotlinProjectModelBuilderImpl @UnsafeApi("Use factory methods instead") constructor(
+    private val extension: KotlinPm20ProjectExtension,
 ) : ToolingModelBuilder, IdeaKotlinProjectModelBuilder {
 
-    private val registeredPlatformDependencyResolvers = mutableListOf<IdeaKotlinConstrainedDependencyResolver>()
-    private val registeredMetadataDependencyResolvers = mutableListOf<IdeaKotlinConstrainedDependencyResolver>()
-    private val registeredAdditionalDependencyResolvers = mutableListOf<IdeaKotlinConstrainedDependencyResolver>()
-    private val registeredDependencyTransformers = mutableListOf<IdeaKotlinDependencyTransformer>()
+    private data class RegisteredDependencyResolver(
+        val resolver: IdeaKotlinDependencyResolver,
+        val constraint: IdeaKotlinDependencyResolverConstraint,
+        val phase: DependencyResolutionPhase,
+        val priority: DependencyResolverPriority,
+        val mode: DependencyResolverMode
+    )
+
+    private data class RegisteredDependencyTransformer(
+        val transformer: IdeaKotlinDependencyTransformer,
+        val phase: DependencyTransformationPhase
+    )
+
+    private val registeredDependencyResolvers = ArrayDeque<RegisteredDependencyResolver>()
+    private val registeredDependencyTransformers = ArrayDeque<RegisteredDependencyTransformer>()
 
     @ExternalVariantApi
-    override fun registerPlatformDependencyResolver(
-        resolver: IdeaKotlinConstrainedDependencyResolver,
+    override fun registerDependencyResolver(
+        resolver: IdeaKotlinDependencyResolver,
+        constraint: IdeaKotlinDependencyResolverConstraint,
+        phase: DependencyResolutionPhase,
+        priority: DependencyResolverPriority,
+        mode: DependencyResolverMode
     ) {
-        registeredPlatformDependencyResolvers.add(resolver)
+        registeredDependencyResolvers.addFirst(
+            RegisteredDependencyResolver(resolver, constraint, phase, priority, mode)
+        )
     }
 
     @ExternalVariantApi
-    override fun registerMetadataDependencyResolver(
-        resolver: IdeaKotlinConstrainedDependencyResolver,
+    override fun registerDependencyTransformer(
+        transformer: IdeaKotlinDependencyTransformer,
+        phase: DependencyTransformationPhase
     ) {
-        registeredMetadataDependencyResolvers.add(resolver)
-    }
-
-    @ExternalVariantApi
-    override fun addAdditionalDependencyResolver(resolver: IdeaKotlinConstrainedDependencyResolver) {
-        registeredAdditionalDependencyResolvers.add(resolver)
-    }
-
-    @ExternalVariantApi
-    override fun registerDependencyTransformer(transformer: IdeaKotlinDependencyTransformer) {
-        registeredDependencyTransformers.add(transformer)
+        registeredDependencyTransformers.addFirst(
+            RegisteredDependencyTransformer(transformer, phase)
+        )
     }
 
     override fun buildIdeaKotlinProjectModel(): IdeaKotlinProjectModel {
@@ -96,58 +130,48 @@ internal class IdeaKotlinProjectModelBuilderImpl(
     }
 
     private inner class Context : IdeaKotlinProjectModelBuildingContext {
-        override val dependencyResolver = IdeaKotlinDependencyResolver(
-            createPlatformDependencyResolver(),
-            createMetadataDependencyResolver(),
-            createAdditionalDependencyResolver()
-        ).withTransformer(createDependencyTransformer())
+        override val dependencyResolver = createDependencyResolver()
+            .withTransformer(createDependencyTransformer())
     }
 
-    private fun createPlatformDependencyResolver() = IdeaKotlinDependencyResolver resolve@{ fragment ->
-        if (!isSinglePlatformTypeFragment(fragment)) return@resolve emptySet()
-        if (isSharedNativeFragment(fragment)) return@resolve emptySet()
-
-        val applicableRegisteredPlatformDependencyResolvers = registeredPlatformDependencyResolvers
-            .filter { resolver -> resolver.constraint(fragment) }
-
-        /* Special resolvers were registered, that want to handle this fragment */
-        if (applicableRegisteredPlatformDependencyResolvers.isNotEmpty()) {
-            return@resolve IdeaKotlinDependencyResolver(applicableRegisteredPlatformDependencyResolvers)
-                .resolve(fragment)
-        }
-
-        defaultPlatformDependencyResolver.resolve(fragment)
+    private fun createDependencyResolver(): IdeaKotlinDependencyResolver {
+        return IdeaKotlinDependencyResolver(DependencyResolutionPhase.values().map { phase ->
+            createDependencyResolver(phase)
+        })
     }
 
-    private fun createMetadataDependencyResolver() = IdeaKotlinDependencyResolver resolve@{ fragment ->
-        /* 'Platform like' fragments shall resolve platform dependencies over metadata */
-        if (isSinglePlatformTypeFragment(fragment) && !isSharedNativeFragment(fragment)) return@resolve emptySet()
+    private fun createDependencyResolver(phase: DependencyResolutionPhase) = IdeaKotlinDependencyResolver resolve@{ fragment ->
+        val applicableResolvers = registeredDependencyResolvers
+            .filter { it.phase == phase }
+            .filter { it.constraint(fragment) }
+            .sortedByDescending { it.priority }
 
-        val applicableRegisteredMetadataDependencyResolvers = registeredMetadataDependencyResolvers
-            .filter { resolver -> resolver.constraint(fragment) }
+        val collaborativeResolvers = applicableResolvers.takeWhile { it.mode == Collaborative }.map { it.resolver }
+        val terminalResolver = listOfNotNull(applicableResolvers.firstOrNull { it.mode == Terminal }).map { it.resolver }
+        val resolvers = collaborativeResolvers + terminalResolver
 
-        /* Special resolvers were registered that want to handle this fragment */
-        if (applicableRegisteredMetadataDependencyResolvers.isNotEmpty()) {
-            return@resolve IdeaKotlinDependencyResolver(applicableRegisteredMetadataDependencyResolvers)
-                .resolve(fragment)
-        }
-
-        defaultMetadataDependencyResolver.resolve(fragment)
+        IdeaKotlinDependencyResolver(resolvers).resolve(fragment)
     }
 
-    private fun createAdditionalDependencyResolver() =
-        IdeaKotlinDependencyResolver(registeredAdditionalDependencyResolvers + defaultAdditionalDependencyResolver)
+    private fun createDependencyTransformer(): IdeaKotlinDependencyTransformer {
+        return IdeaKotlinDependencyTransformer(DependencyTransformationPhase.values().map { phase ->
+            createDependencyTransformer(phase)
+        })
+    }
 
-    private fun createDependencyTransformer() =
-        IdeaKotlinDependencyTransformer(registeredDependencyTransformers + defaultDependencyTransformer)
-}
+    private fun createDependencyTransformer(phase: DependencyTransformationPhase): IdeaKotlinDependencyTransformer {
+        return IdeaKotlinDependencyTransformer(
+            registeredDependencyTransformers.filter { it.phase == phase }.map { it.transformer }
+        )
+    }
 
-internal fun IdeaKotlinProjectModelBuildingContext.toIdeaKotlinProjectModel(extension: KotlinPm20ProjectExtension): IdeaKotlinProjectModel {
-    return IdeaKotlinProjectModelImpl(
-        gradlePluginVersion = extension.project.getKotlinPluginVersion(),
-        coreLibrariesVersion = extension.coreLibrariesVersion,
-        explicitApiModeCliOption = extension.explicitApi?.cliOption,
-        kotlinNativeHome = File(extension.project.konanHome).absoluteFile,
-        modules = extension.modules.map { module -> toIdeaKotlinModule(module) }
-    )
+    internal fun IdeaKotlinProjectModelBuildingContext.toIdeaKotlinProjectModel(extension: KotlinPm20ProjectExtension): IdeaKotlinProjectModel {
+        return IdeaKotlinProjectModelImpl(
+            gradlePluginVersion = extension.project.getKotlinPluginVersion(),
+            coreLibrariesVersion = extension.coreLibrariesVersion,
+            explicitApiModeCliOption = extension.explicitApi?.cliOption,
+            kotlinNativeHome = File(extension.project.konanHome).absoluteFile,
+            modules = extension.modules.map { module -> toIdeaKotlinModule(module) }
+        )
+    }
 }

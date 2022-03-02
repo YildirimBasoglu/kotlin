@@ -60,7 +60,7 @@ class IdeaKotlinConstrainedDependencyResolver internal constructor(
     private val resolver: IdeaKotlinDependencyResolver,
     internal val constraint: IdeaKotlinDependencyResolverConstraint
 ) : IdeaKotlinDependencyResolver {
-    override fun resolve(fragment: KotlinGradleFragment): Set<IdeaKotlinFragmentDependency> {
+    override fun resolve(fragment: KotlinGradleFragment): Set<IdeaKotlinDependency> {
         return if (constraint.isApplicable(fragment)) resolver.resolve(fragment)
         else emptySet()
     }

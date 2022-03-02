@@ -6,10 +6,12 @@
 package org.jetbrains.kotlin.gradle.utils
 
 import org.gradle.api.Project
+import java.io.BufferedInputStream
 import java.io.File
-import java.io.IOException
+import java.io.FileInputStream
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.security.MessageDigest
 
 internal fun File.isJavaFile() =
     extension.equals("java", ignoreCase = true)
@@ -57,3 +59,16 @@ internal fun File.canonicalPathWithoutExtension(): String =
     canonicalPath.substringBeforeLast(".")
 
 internal fun File.listFilesOrEmpty() = (if (exists()) listFiles() else null).orEmpty()
+
+fun File.contentSha256(): ByteArray {
+    val digest = MessageDigest.getInstance("SHA-256")
+    BufferedInputStream(FileInputStream(this)).use { stream ->
+        val buffer = ByteArray(4096)
+        while (true) {
+            val bytesRead = stream.read(buffer)
+            if (bytesRead < 0) break
+            digest.update(buffer, 0, bytesRead)
+        }
+    }
+    return digest.digest()
+}
