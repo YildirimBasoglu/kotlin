@@ -370,6 +370,14 @@ internal object LLFirSessionFactory {
             // We need FirRegisteredPluginAnnotations during extensions' registration process
             val annotationsResolver = project.createAnnotationResolver(contentScope)
             register(FirRegisteredPluginAnnotations::class, LLFirIdeRegisteredPluginAnnotations(this@session, annotationsResolver))
+            register(
+                FirPredicateBasedProvider::class,
+                LLFirIdePredicateBasedProvider(
+                    this@session,
+                    annotationsResolver,
+                    project.createDeclarationProvider(contentScope)
+                )
+            )
 
             FirSessionFactory.FirSessionConfigurator(this).apply {
                 for (extensionRegistrar in FirExtensionRegistrar.getInstances(project)) {
