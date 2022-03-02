@@ -523,6 +523,6 @@ internal class PropertiesProvider private constructor(private val project: Proje
                     ?: PropertiesProvider(project) // Fallback if multiple class loaders are involved
             }
 
-        internal val Project.kotlinPropertiesProvider get() = PropertiesProvider(this)
+        internal val Project.kotlinPropertiesProvider get() = PropertiesProvider.invoke(this)
     }
 }

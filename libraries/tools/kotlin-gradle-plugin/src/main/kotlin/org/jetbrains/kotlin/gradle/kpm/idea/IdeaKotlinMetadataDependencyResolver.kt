@@ -9,10 +9,9 @@ import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.jetbrains.kotlin.gradle.plugin.mpp.MetadataDependencyResolution
 import org.jetbrains.kotlin.gradle.plugin.mpp.getSourceSetCompiledMetadata
+import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.FragmentGranularMetadataResolverFactory
-import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleFragment
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleModule.Companion.moduleName
-import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleVariant
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.toModuleDependency
 import org.jetbrains.kotlin.gradle.plugin.sources.SourceSetMetadataStorageForIde
 import org.jetbrains.kotlin.project.model.KotlinModuleIdentifier
@@ -20,10 +19,9 @@ import org.jetbrains.kotlin.project.model.LocalModuleIdentifier
 
 internal class IdeaKotlinMetadataDependencyResolver(
     private val fragmentGranularMetadataResolverFactory: FragmentGranularMetadataResolverFactory = FragmentGranularMetadataResolverFactory()
-) : IdeaKotlinFragmentDependencyResolver {
+) : IdeaKotlinDependencyResolver {
 
     override fun resolve(fragment: KotlinGradleFragment): Set<IdeaKotlinFragmentDependency> {
-        if (fragment is KotlinGradleVariant) return emptySet() // <- use variant resolver!
         val fragmentGranularMetadataResolver = fragmentGranularMetadataResolverFactory.getOrCreate(fragment)
         return fragmentGranularMetadataResolver.resolutions.flatMap { resolution ->
             resolveMetadataDependencies(fragment, resolution)
@@ -71,7 +69,8 @@ private fun resolveFragmentBinaryDependencies(
     return when (resolution) {
         is MetadataDependencyResolution.ChooseVisibleSourceSets ->
             resolveTransformedFragmentBinaryDependency(fragment, resolution, dependencyId, kotlinModuleIdentifier)
-        is MetadataDependencyResolution.KeepOriginalDependency -> emptyList() // TODO
+        is MetadataDependencyResolution.KeepOriginalDependency ->
+            resolveOriginalDependency(fragment, dependencyId)
         is MetadataDependencyResolution.ExcludeAsUnrequested -> emptyList()
     }
 }
@@ -101,4 +100,21 @@ private fun resolveTransformedFragmentBinaryDependency(
                 )
             }
         }
+}
+
+private fun resolveOriginalDependency(
+    fragment: KotlinGradleFragment,
+    dependencyId: ModuleComponentIdentifier
+): List<IdeaKotlinFragmentResolvedBinaryDependency> {
+    val allCompileDependencies = fragment.project.configurations.getByName(fragment.containingModule.resolvableMetadataConfigurationName)
+
+    return allCompileDependencies.incoming.artifactView { view ->
+        view.componentFilter { id -> id == dependencyId }
+    }.artifacts.map { artifact ->
+        IdeaKotlinFragmentResolvedBinaryDependencyImpl(
+            binaryType = IdeaKotlinFragmentBinaryDependency.CLASSPATH_BINARY_TYPE,
+            binaryFile = artifact.file,
+            coordinates = IdeaKotlinBinaryCoordinatesImpl(dependencyId.group, dependencyId.module, dependencyId.version)
+        )
+    }
 }

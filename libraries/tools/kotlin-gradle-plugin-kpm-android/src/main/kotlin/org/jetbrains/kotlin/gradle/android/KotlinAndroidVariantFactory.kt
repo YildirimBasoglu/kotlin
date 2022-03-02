@@ -81,7 +81,7 @@ fun KotlinGradleModule.createKotlinAndroidVariant(androidVariant: BaseVariant) {
         kotlinVariant.compilationOutputs.classesDirs
     )
 
-    project.dependencies.add(kotlinVariant.compileDependenciesConfiguration.name, project.getAndroidRuntimeJars())
+    project.dependencies.add(androidCommon.implementationConfigurationName, project.getAndroidRuntimeJars())
 
     kotlinVariant.compileDependencyFiles = project.files(
         androidVariant.getCompileClasspath(mainBytecodeKey),

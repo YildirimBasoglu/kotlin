@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleFragment
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleVariant
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.resolvableMetadataConfigurationName
 
-internal class IdeaKotlinSourcesAndDocumentationResolver : IdeaKotlinFragmentDependencyResolver {
+internal class IdeaKotlinSourcesAndDocumentationResolver : IdeaKotlinDependencyResolver {
     override fun resolve(fragment: KotlinGradleFragment): Set<IdeaKotlinFragmentDependency> {
         if (fragment is KotlinGradleVariant) {
             return resolve(fragment.project, fragment.compileDependenciesConfiguration)

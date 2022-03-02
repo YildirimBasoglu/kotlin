@@ -8,7 +8,7 @@ package org.jetbrains.kotlin.gradle.kpm.idea
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleFragment
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.variantsContainingFragment
 
-internal object IdeaKotlinSinglePlatformStdlibCommonFilter : IdeaKotlinFragmentDependencyTransformer {
+internal object IdeaKotlinSinglePlatformStdlibCommonFilter : IdeaKotlinDependencyTransformer {
     private const val stdlibCoordinatesGroup = "org.jetbrains.kotlin"
     private val stdlibCoordinatesModules = setOf("kotlin-stdlib-common", "kotlin-test-common", "kotlin-test-annotations-common")
 
@@ -16,7 +16,7 @@ internal object IdeaKotlinSinglePlatformStdlibCommonFilter : IdeaKotlinFragmentD
         fragment: KotlinGradleFragment,
         dependencies: Set<IdeaKotlinFragmentDependency>
     ): Set<IdeaKotlinFragmentDependency> {
-        val platforms = fragment.containingModule.variantsContainingFragment(fragment).map { it.platformType }
+        val platforms = fragment.containingModule.variantsContainingFragment(fragment).map { it.platformType }.toSet()
         if (platforms.size != 1) return dependencies
 
         return dependencies.filter { dependency ->
