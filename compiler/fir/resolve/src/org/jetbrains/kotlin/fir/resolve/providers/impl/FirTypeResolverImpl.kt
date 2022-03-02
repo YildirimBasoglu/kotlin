@@ -101,7 +101,7 @@ class FirTypeResolverImpl(private val session: FirSession) : FirTypeResolver() {
     fun resolveUserTypeToSymbol(
         typeRef: FirUserTypeRef,
         scopeClassDeclaration: ScopeClassDeclaration,
-        useSiteFile: FirFile,
+        useSiteFile: FirFile?,
         supertypeSupplier: SupertypeSupplier
     ): TypeResolutionResult {
         val qualifierResolver = session.qualifierResolver
@@ -482,7 +482,7 @@ class FirTypeResolverImpl(private val session: FirSession) : FirTypeResolver() {
         scopeClassDeclaration: ScopeClassDeclaration,
         areBareTypesAllowed: Boolean,
         isOperandOfIsOperator: Boolean,
-        useSiteFile: FirFile,
+        useSiteFile: FirFile?,
         supertypeSupplier: SupertypeSupplier
     ): Pair<ConeKotlinType, ConeDiagnostic?> {
         return when (typeRef) {
