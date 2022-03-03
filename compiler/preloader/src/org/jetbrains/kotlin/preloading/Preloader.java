@@ -37,7 +37,7 @@ public class Preloader {
         if (javaVersion.equals("1.6") || javaVersion.equals("1.7")) {
             System.err.println("error: running the Kotlin compiler under Java " + javaVersion + " is not supported. " +
                                "Java 1.8 or later is required");
-            System.exit(1);
+            throw new Error();
         }
 
         try {
@@ -47,7 +47,7 @@ public class Preloader {
             System.err.println("error: " + e.toString());
             System.err.println();
             printUsage(System.err);
-            System.exit(1);
+            throw new Error();
         }
     }
 

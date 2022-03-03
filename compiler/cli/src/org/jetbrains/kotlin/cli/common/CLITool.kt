@@ -165,7 +165,7 @@ abstract class CLITool<A : CommonToolArguments> {
 
             val exitCode = doMainNoExit(compiler, args)
             if (exitCode != ExitCode.OK) {
-                exitProcess(exitCode.code)
+                error(exitCode.code)
             }
         }
 

@@ -24,7 +24,7 @@ internal class CliLoggerAdapter(
 
     override fun fatal(message: String): Nothing {
         printlnIndented("Error: $message\n", *CommonizerLogLevel.values())
-        exitProcess(1)
+        error(1)
     }
 
     private fun printlnIndented(text: String, vararg levels: CommonizerLogLevel) {

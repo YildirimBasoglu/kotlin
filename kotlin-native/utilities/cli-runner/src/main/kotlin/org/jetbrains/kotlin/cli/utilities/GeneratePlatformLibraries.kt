@@ -440,7 +440,7 @@ private fun generatePlatformLibraries(target: KonanTarget, cinteropOptions: CInt
 
         if (built.values.any { it != ProcessingStatus.SUCCESS }) {
             logger.logFailedLibraries(built)
-            exitProcess(-1)
+            error(-1)
         }
 
     } finally {

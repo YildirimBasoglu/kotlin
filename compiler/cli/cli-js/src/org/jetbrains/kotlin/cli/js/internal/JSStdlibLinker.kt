@@ -55,7 +55,7 @@ private fun mergeStdlibParts(outputFile: File, wrapperFile: File, baseDir: File,
             when (sourceMapParse) {
                 is SourceMapError -> {
                     System.err.println("Error parsing source map file $sourceMapFile: ${sourceMapParse.message}")
-                    exitProcess(1)
+                    error(1)
                 }
                 is SourceMapSuccess -> {
                     val sourceMap = sourceMapParse.value

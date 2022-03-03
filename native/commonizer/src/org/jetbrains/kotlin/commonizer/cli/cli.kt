@@ -123,5 +123,5 @@ private fun printUsageAndExit(errorMessage: String? = null): Nothing {
         println()
     }
 
-    exitProcess(if (errorMessage != null) 1 else 0)
+    error(if (errorMessage != null) 1 else 0)
 }

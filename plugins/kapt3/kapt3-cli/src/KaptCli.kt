@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
     val kaptTransformed = transformArgs(args.asList(), messageCollector, false)
 
     if (messageCollector.hasErrors()) {
-        exitProcess(ExitCode.COMPILATION_ERROR.code)
+        error(ExitCode.COMPILATION_ERROR.code)
     }
 
     K2JVMCompiler.main(kaptTransformed.toTypedArray())

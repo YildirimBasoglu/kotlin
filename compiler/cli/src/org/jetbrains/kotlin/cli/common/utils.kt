@@ -91,7 +91,7 @@ fun MessageCollector.toLogger(): Logger =
 
         override fun fatal(message: String): Nothing {
             report(CompilerMessageSeverity.ERROR, message)
-            exitProcess(1)
+            kotlin.error(message)
         }
 
         override fun warning(message: String) {

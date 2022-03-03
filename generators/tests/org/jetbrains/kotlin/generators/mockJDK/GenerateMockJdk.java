@@ -354,7 +354,7 @@ public class GenerateMockJdk {
 
                 if (!foundOpenJDKLicense) {
                     System.out.println("rt.jar and src.zip should point to OpenJDK installation");
-                    System.exit(1);
+                    throw new Error();
                 }
             }
         }

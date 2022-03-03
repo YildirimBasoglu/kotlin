@@ -76,7 +76,7 @@ public class KotlinPrePushHook {
     private static void error(String message) {
         //noinspection UseOfSystemOutOrSystemErr
         System.err.println(message);
-        System.exit(1);
+        throw new Error();
     }
 
     private static boolean showWarning(String reason, String targetBranch) {

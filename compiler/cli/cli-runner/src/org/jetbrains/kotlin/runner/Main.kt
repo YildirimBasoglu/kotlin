@@ -29,7 +29,7 @@ object Main {
         val home = System.getProperty("kotlin.home")
         if (home == null) {
             System.err.println("error: no kotlin.home system property was passed")
-            exitProcess(1)
+            error(1)
         }
         KOTLIN_HOME = File(home)
     }
@@ -199,7 +199,7 @@ object Main {
         }
         catch (e: RunnerException) {
             System.err.println("error: " + e.message)
-            exitProcess(1)
+            error(1)
         }
     }
 

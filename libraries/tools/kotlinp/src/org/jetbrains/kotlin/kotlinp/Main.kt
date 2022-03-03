@@ -61,7 +61,7 @@ object Main {
             run(args)
         } catch (e: KotlinpException) {
             System.err.println("error: " + e.message)
-            exitProcess(1)
+            error(1)
         }
     }
 
