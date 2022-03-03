@@ -104,7 +104,7 @@ class ConnectionsTest : KotlinIntegrationTestBase() {
             timer.schedule(daemonOptions.forceShutdownTimeoutMilliseconds) {
                 cancel()
                 org.jetbrains.kotlin.daemon.KotlinCompileDaemon.log.info("force JVM shutdown")
-                System.exit(0)
+                error(0)
             }
         } else {
             timer.cancel()

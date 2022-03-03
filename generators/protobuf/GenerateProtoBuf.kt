@@ -77,7 +77,7 @@ fun main() {
         e.printStackTrace()
     } finally {
         // Workaround for JVM hanging: IDEA's process handler creates thread pool
-        exitProcess(0)
+        error(0)
     }
 }
 

@@ -76,7 +76,7 @@ where possible options include:
   -help (-h)                 Print a synopsis of options
 """
         )
-        exitProcess(0)
+        error(0)
     }
 
     private fun printVersionAndExit() {
@@ -84,6 +84,6 @@ where possible options include:
         val version = "@snapshot@"
 
         println("Kotlin version " + version + " (JRE " + System.getProperty("java.runtime.version") + ")")
-        exitProcess(0)
+        error(0)
     }
 }

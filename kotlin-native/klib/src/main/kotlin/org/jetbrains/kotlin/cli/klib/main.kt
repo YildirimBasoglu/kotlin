@@ -69,7 +69,7 @@ class Command(args: Array<String>) {
     init {
         if (args.size < 2) {
             printUsage()
-            exitProcess(0)
+            error(0)
         }
     }
 

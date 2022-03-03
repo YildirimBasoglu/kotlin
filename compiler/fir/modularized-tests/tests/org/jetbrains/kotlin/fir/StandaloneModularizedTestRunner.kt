@@ -54,7 +54,7 @@ object StandaloneModularizedTestRunner {
         )
 
         println("runner exit")
-        exitProcess(if (ok) 0 else 1)
+        error(if (ok) 0 else 1)
 
     }
 }

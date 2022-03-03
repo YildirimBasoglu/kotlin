@@ -224,7 +224,7 @@ internal class SingleJUnitTestRunner {
             val (className, methodName) = args.single().split('#')
             val request = Request.method(Class.forName(className), methodName)
             val result = JUnitCore().run(request)
-            exitProcess(if (result.wasSuccessful()) 0 else 1)
+            error(if (result.wasSuccessful()) 0 else 1)
         }
     }
 }

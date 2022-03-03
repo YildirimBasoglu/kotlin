@@ -212,7 +212,7 @@ object KotlinCompileDaemon : KotlinCompileDaemonBase() {
                                                          timer.schedule(daemonOptions.forceShutdownTimeoutMilliseconds) {
                                                              cancel()
                                                              log.info("force JVM shutdown")
-                                                             exitProcess(0)
+                                                             error(0)
                                                          }
                                                      }
                                                      else {

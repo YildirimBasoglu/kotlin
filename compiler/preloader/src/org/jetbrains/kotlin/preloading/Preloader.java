@@ -152,7 +152,7 @@ public class Preloader {
 
             if ("-help".equals(arg) || "-h".equals(arg)) {
                 printUsage(System.out);
-                System.exit(0);
+                throw new Error();
             }
             else if ("-cp".equals(arg) || "-classpath".equals(arg)) {
                 if (end) throw new PreloaderException("no argument provided to " + arg);

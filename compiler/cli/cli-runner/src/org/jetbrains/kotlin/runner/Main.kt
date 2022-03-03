@@ -232,7 +232,7 @@ or, in case of guess, according to the following rules:
 arguments are passed to the main function when running class or jar file, and for standard script definitions
 as the 'args' parameter when running script or expression
 """)
-        exitProcess(0)
+        error(0)
     }
 
     private fun printVersionAndExit() {
@@ -244,6 +244,6 @@ as the 'args' parameter when running script or expression
         }
 
         println("Kotlin version " + version + " (JRE " + System.getProperty("java.runtime.version") + ")")
-        exitProcess(0)
+        error(0)
     }
 }
