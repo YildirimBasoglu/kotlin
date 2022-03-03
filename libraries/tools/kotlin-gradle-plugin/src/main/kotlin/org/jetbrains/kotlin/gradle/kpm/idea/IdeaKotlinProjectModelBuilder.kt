@@ -29,7 +29,7 @@ interface IdeaKotlinProjectModelBuilder {
     }
 
     enum class DependencyResolutionLevel {
-        Default, Special
+        Default, Overwrite
     }
 
     enum class DependencyTransformationPhase {

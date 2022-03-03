@@ -17,147 +17,88 @@ import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.Fragme
 import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.FragmentConstraint.Companion.isVariant
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.FragmentAttributes
+import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleVariant
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinPm20ProjectExtension
+import org.jetbrains.kotlin.project.model.utils.variantsContainingFragment
+
+@OptIn(ExternalVariantApi::class)
+val isAndroidFragmentConstraint = FragmentConstraint { fragment ->
+    fragment.containingModule.variantsContainingFragment(fragment).all { variant ->
+        variant is KotlinGradleVariant && androidDslKey in variant.external
+    }
+}
+
+@OptIn(ExternalVariantApi::class)
+val isAndroidAndJvmShared = FragmentConstraint constraint@{ fragment ->
+    val variants = fragment.containingModule.variantsContainingFragment(fragment).filterIsInstance<KotlinGradleVariant>()
+    if (variants.any { it.platformType != KotlinPlatformType.jvm }) return@constraint false
+    variants.any { androidDslKey in it.external } && variants.any { androidDslKey !in it.external }
+}
 
 @OptIn(ExternalVariantApi::class, InternalKotlinGradlePluginApi::class)
 internal fun KotlinPm20ProjectExtension.setupIdeaKotlinFragmentDependencyResolver() {
+    configureIdeaKotlinSpecialPlatformDependencyResolution {
 
-    configureIdeaPlatformDependencyResolution {
-        withConstraint({ fragment -> androidDslKey in fragment.external }) {
-            variant {
-                variantBinaryType = CLASSPATH_BINARY_TYPE
-                variantAttributes {
+        /*
+        Handle android + jvm use cases:
+        We do not yet support jvm based metadata compilations, therefore we do not
+        expect any reasonable results coming from metadata resolution.
+        We default to a 'KotlinPlatformType.jvm' resolution
+         */
+        withConstraint(isAndroidAndJvmShared) {
+            withPlatformResolutionAttributes {
+                namedAttribute(Usage.USAGE_ATTRIBUTE, Usage.JAVA_API)
+                attribute(KotlinPlatformType.attribute, KotlinPlatformType.jvm)
+            }
+
+            artifactView {
+                artifactViewBinaryType = CLASSPATH_BINARY_TYPE
+            }
+        }
+
+        withConstraint(isAndroidFragmentConstraint) {
+            withPlatformResolutionAttributes {
+                namedAttribute(Usage.USAGE_ATTRIBUTE, Usage.JAVA_API)
+                attribute(KotlinPlatformType.attribute, KotlinPlatformType.androidJvm)
+            }
+
+            artifactView {
+                artifactViewBinaryType = CLASSPATH_BINARY_TYPE
+                artifactViewAttributes {
                     attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.CLASSES_JAR.type)
                 }
             }
 
-            variant {
-                variantBinaryType = "manifest"
-                variantAttributes {
+            artifactView {
+                artifactViewBinaryType = "manifest"
+                artifactViewAttributes {
                     attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.MANIFEST.type)
                 }
             }
 
-            variant {
-                variantBinaryType = "resources"
-                variantAttributes {
+            artifactView {
+                artifactViewBinaryType = "resources"
+                artifactViewAttributes {
                     attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.ANDROID_RES.type)
                 }
             }
 
-            variant {
-                variantBinaryType = "android-symbol"
-                variantAttributes {
+            artifactView {
+                artifactViewBinaryType = "android-symbol"
+                artifactViewAttributes {
                     attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.COMPILE_SYMBOL_LIST.type)
+                }
+            }
+
+            additionalDependencies {
+                project.getAndroidRuntimeJars().map { androidRuntimeJar ->
+                    IdeaKotlinResolvedBinaryDependencyImpl(
+                        binaryType = CLASSPATH_BINARY_TYPE,
+                        binaryFile = androidRuntimeJar,
+                        coordinates = null
+                    )
                 }
             }
         }
     }
-
-    ideaKotlinProjectModelBuilder.registerDependencyResolver(
-        IdeaKotlinPlatformDependencyResolver(
-            binaryType = CLASSPATH_BINARY_TYPE,
-            artifactResolution = IdeaKotlinPlatformDependencyResolver.ArtifactResolution.Variant(FragmentAttributes {
-                attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.CLASSES_JAR.type)
-            })
-        ),
-        constraint = isVariant and FragmentConstraint { androidDslKey in it.external },
-        phase = IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.BinaryDependencyResolution,
-        level = IdeaKotlinProjectModelBuilder.DependencyResolutionLevel.Special
-    )
-
-    ideaKotlinProjectModelBuilder.registerDependencyResolver(
-        IdeaKotlinPlatformDependencyResolver(
-            binaryType = "manifest",
-            artifactResolution = IdeaKotlinPlatformDependencyResolver.ArtifactResolution.Variant(FragmentAttributes {
-                attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.MANIFEST.type)
-            })
-        ),
-        constraint = isVariant and FragmentConstraint { androidDslKey in it.external },
-        phase = IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.BinaryDependencyResolution,
-        level = IdeaKotlinProjectModelBuilder.DependencyResolutionLevel.Special
-    )
-
-    ideaKotlinProjectModelBuilder.registerDependencyResolver(
-        IdeaKotlinPlatformDependencyResolver(
-            binaryType = "android-symbol",
-            artifactResolution = IdeaKotlinPlatformDependencyResolver.ArtifactResolution.Variant(FragmentAttributes {
-                attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.COMPILE_SYMBOL_LIST.type)
-            })
-        ),
-        constraint = isVariant and FragmentConstraint { androidDslKey in it.external },
-        phase = IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.BinaryDependencyResolution,
-        level = IdeaKotlinProjectModelBuilder.DependencyResolutionLevel.Special
-    )
-
-    /* Resolver for 'platform fragments' */
-    ideaKotlinProjectModelBuilder.registerDependencyResolver(
-        IdeaKotlinPlatformDependencyResolver(
-            binaryType = CLASSPATH_BINARY_TYPE,
-            artifactResolution = IdeaKotlinPlatformDependencyResolver.ArtifactResolution.PlatformFragment(
-                platformResolutionAttributes = FragmentAttributes {
-                    namedAttribute(Usage.USAGE_ATTRIBUTE, Usage.JAVA_API)
-                    attribute(KotlinPlatformType.attribute, KotlinPlatformType.androidJvm)
-                },
-                artifactViewAttributes = FragmentAttributes {
-                    attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.CLASSES_JAR.type)
-                }
-            )
-        ),
-        constraint = !isVariant and FragmentConstraint { androidDslKey in it.external },
-        phase = IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.BinaryDependencyResolution,
-        level = IdeaKotlinProjectModelBuilder.DependencyResolutionLevel.Special
-    )
-
-    ideaKotlinProjectModelBuilder.registerDependencyResolver(
-        IdeaKotlinPlatformDependencyResolver(
-            binaryType = "manifest",
-            artifactResolution = IdeaKotlinPlatformDependencyResolver.ArtifactResolution.PlatformFragment(
-                platformResolutionAttributes = FragmentAttributes {
-                    namedAttribute(Usage.USAGE_ATTRIBUTE, Usage.JAVA_API)
-                    attribute(KotlinPlatformType.attribute, KotlinPlatformType.androidJvm)
-                },
-                artifactViewAttributes = FragmentAttributes {
-                    attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.MANIFEST.type)
-                }
-            )
-        ),
-        constraint = !isVariant and FragmentConstraint { androidDslKey in it.external },
-        phase = IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.BinaryDependencyResolution,
-        level = IdeaKotlinProjectModelBuilder.DependencyResolutionLevel.Special
-    )
-
-    ideaKotlinProjectModelBuilder.registerDependencyResolver(
-        IdeaKotlinPlatformDependencyResolver(
-            binaryType = "android-symbol",
-            artifactResolution = IdeaKotlinPlatformDependencyResolver.ArtifactResolution.PlatformFragment(
-                platformResolutionAttributes = FragmentAttributes {
-                    namedAttribute(Usage.USAGE_ATTRIBUTE, Usage.JAVA_API)
-                    attribute(KotlinPlatformType.attribute, KotlinPlatformType.androidJvm)
-                },
-                artifactViewAttributes = FragmentAttributes {
-                    attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.COMPILE_SYMBOL_LIST.type)
-                }
-            )
-        ),
-        constraint = !isVariant and FragmentConstraint { androidDslKey in it.external },
-        phase = IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.BinaryDependencyResolution,
-        level = IdeaKotlinProjectModelBuilder.DependencyResolutionLevel.Special
-    )
-
-
-    ideaKotlinProjectModelBuilder.registerDependencyResolver(
-        IdeaKotlinDependencyResolver resolve@{
-            project.getAndroidRuntimeJars().map { androidRuntimeJar ->
-                IdeaKotlinResolvedBinaryDependencyImpl(
-                    binaryType = CLASSPATH_BINARY_TYPE,
-                    binaryFile = androidRuntimeJar,
-                    coordinates = null
-                )
-            }.toSet()
-        },
-        constraint = { androidDslKey in it.external },
-        phase = IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.BinaryDependencyResolution,
-        level = IdeaKotlinProjectModelBuilder.DependencyResolutionLevel.Special
-    )
 }

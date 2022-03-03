@@ -61,15 +61,11 @@ internal fun File.canonicalPathWithoutExtension(): String =
 
 internal fun File.listFilesOrEmpty() = (if (exists()) listFiles() else null).orEmpty()
 
-fun File.contentSha256(): ByteArray {
-    val digest = MessageDigest.getInstance("SHA-256")
-    BufferedInputStream(FileInputStream(this)).use { stream ->
-        val buffer = ByteArray(4096)
-        while (true) {
-            val bytesRead = stream.read(buffer)
-            if (bytesRead < 0) break
-            digest.update(buffer, 0, bytesRead)
-        }
+internal inline fun <T> withTemporaryDirectory(prefix: String, action: (directory: File) -> T): T {
+    val directory = Files.createTempDirectory(prefix).toFile()
+    return try {
+        action(directory)
+    } finally {
+        directory.deleteRecursively()
     }
-    return digest.digest()
 }

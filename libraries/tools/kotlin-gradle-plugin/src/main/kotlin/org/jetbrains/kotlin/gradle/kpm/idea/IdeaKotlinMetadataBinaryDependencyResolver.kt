@@ -13,9 +13,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.FragmentGranularMetadataResol
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleFragment
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleModule.Companion.moduleName
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.toModuleDependency
-import org.jetbrains.kotlin.gradle.utils.contentSha256
-import java.nio.file.Files
-import java.util.Base64
+import org.jetbrains.kotlin.gradle.utils.withTemporaryDirectory
 
 internal class IdeaKotlinMetadataBinaryDependencyResolver(
     private val fragmentGranularMetadataResolverFactory: FragmentGranularMetadataResolverFactory
@@ -37,32 +35,30 @@ internal class IdeaKotlinMetadataBinaryDependencyResolver(
             is JarMetadataProvider -> resolution.metadataProvider
         }
         return resolution.allVisibleSourceSetNames.mapNotNull { visibleFragmentName ->
-            val temporaryDirectory = Files.createTempDirectory("metadataBinaryResolver").toFile()
+            val binaryFile = withTemporaryDirectory("metadataBinaryDependencyResolver") { temporaryDirectory ->
+                val sourceBinaryFile = metadataProvider.getSourceSetCompiledMetadata(
+                    sourceSetName = visibleFragmentName,
+                    outputDirectory = temporaryDirectory,
+                    materializeFile = true
+                )
 
-            val sourceBinaryFile = metadataProvider.getSourceSetCompiledMetadata(
-                sourceSetName = visibleFragmentName,
-                outputDirectory = temporaryDirectory,
-                materializeFile = true
-            )
+                if (!sourceBinaryFile.isFile)
+                    return@mapNotNull null
 
-
-            if (!sourceBinaryFile.isFile) return@mapNotNull null
-
-            val targetBinaryFile = fragment.project.rootDir
-                .resolve(".gradle").resolve("kotlin").resolve("transformedKotlinMetadata")
-                .resolve(gradleModuleIdentifier.group)
-                .resolve(gradleModuleIdentifier.module)
-                .resolve(gradleModuleIdentifier.version)
-                .resolve(kotlinModuleIdentifier.moduleName)
-                .resolve(visibleFragmentName)
-                .resolve(sourceBinaryFile.name)
-                .apply { if (!isFile) sourceBinaryFile.copyTo(this) }
-
-            temporaryDirectory.deleteRecursively()
+                fragment.project.rootDir
+                    .resolve(".gradle").resolve("kotlin").resolve("transformedKotlinMetadata")
+                    .resolve(gradleModuleIdentifier.group)
+                    .resolve(gradleModuleIdentifier.module)
+                    .resolve(gradleModuleIdentifier.version)
+                    .resolve(kotlinModuleIdentifier.moduleName)
+                    .resolve(visibleFragmentName)
+                    .resolve(sourceBinaryFile.name)
+                    .apply { if (!isFile) sourceBinaryFile.copyTo(this) }
+            }
 
             IdeaKotlinResolvedBinaryDependencyImpl(
                 binaryType = IdeaKotlinDependency.CLASSPATH_BINARY_TYPE,
-                binaryFile = targetBinaryFile,
+                binaryFile = binaryFile,
                 coordinates = IdeaKotlinBinaryCoordinatesImpl(
                     group = gradleModuleIdentifier.group,
                     module = gradleModuleIdentifier.module,

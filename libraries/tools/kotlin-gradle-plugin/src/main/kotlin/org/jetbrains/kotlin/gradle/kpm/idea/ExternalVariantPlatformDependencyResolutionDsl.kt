@@ -8,8 +8,8 @@
 package org.jetbrains.kotlin.gradle.kpm.idea
 
 import org.jetbrains.kotlin.gradle.kpm.external.ExternalVariantApi
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinPlatformDependencyResolver.ArtifactResolution
 import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.*
-import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.FragmentAttributes
 
@@ -18,29 +18,36 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.FragmentAttributes
 annotation class ExternalVariantPlatformDependencyResolutionDsl
 
 @ExternalVariantApi
-fun KotlinPm20ProjectExtension.configureIdeaPlatformDependencyResolution(
+fun KotlinPm20ProjectExtension.configureIdeaKotlinSpecialPlatformDependencyResolution(
     configure: IdeaKotlinPlatformDependencyResolutionDslHandle.() -> Unit
 ) {
-    IdeaKotlinPlatformDependencyResolutionDslHandle(ideaKotlinProjectModelBuilder).configure()
+    IdeaKotlinPlatformDependencyResolutionDslHandle(ideaKotlinProjectModelBuilder).also(configure).setup()
 }
 
 @ExternalVariantPlatformDependencyResolutionDsl
-class IdeaKotlinPlatformDependencyResolutionDslHandle(
+class IdeaKotlinPlatformDependencyResolutionDslHandle internal constructor(
     private val toolingModelBuilder: IdeaKotlinProjectModelBuilder,
-    private val constraint: FragmentConstraint = FragmentConstraint.unconstrained
+    private val constraint: FragmentConstraint = FragmentConstraint.unconstrained,
+    private val parent: IdeaKotlinPlatformDependencyResolutionDslHandle? = null
 ) {
+    private val artifactViewDslHandles = mutableListOf<ArtifactViewDslHandle>()
+    private val children = mutableListOf<IdeaKotlinPlatformDependencyResolutionDslHandle>()
+    private val additionalDependencies = mutableListOf<IdeaKotlinDependencyResolver>()
+
     @ExternalVariantPlatformDependencyResolutionDsl
-    class VariantDslHandle {
+    var platformResolutionAttributes: FragmentAttributes<KotlinGradleFragment>? = null
+
+    @ExternalVariantPlatformDependencyResolutionDsl
+    class ArtifactViewDslHandle {
+        @ExternalVariantPlatformDependencyResolutionDsl
+        var artifactViewBinaryType: String = IdeaKotlinDependency.CLASSPATH_BINARY_TYPE
 
         @ExternalVariantPlatformDependencyResolutionDsl
-        var variantBinaryType: String = IdeaKotlinDependency.CLASSPATH_BINARY_TYPE
+        var artifactViewAttributes: FragmentAttributes<KotlinGradleFragment> = FragmentAttributes { }
 
         @ExternalVariantPlatformDependencyResolutionDsl
-        var variantAttributes: FragmentAttributes<KotlinGradleFragment> = FragmentAttributes { }
-
-        @ExternalVariantPlatformDependencyResolutionDsl
-        fun variantAttributes(setAttributes: KotlinGradleFragmentConfigurationAttributesContext<KotlinGradleFragment>.() -> Unit) {
-            variantAttributes += FragmentAttributes(setAttributes)
+        fun artifactViewAttributes(setAttributes: KotlinGradleFragmentConfigurationAttributesContext<KotlinGradleFragment>.() -> Unit) {
+            artifactViewAttributes += FragmentAttributes(setAttributes)
         }
     }
 
@@ -49,28 +56,83 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle(
         constraint: FragmentConstraint,
         configure: IdeaKotlinPlatformDependencyResolutionDslHandle.() -> Unit
     ) {
-        IdeaKotlinPlatformDependencyResolutionDslHandle(
-            toolingModelBuilder, this.constraint and constraint
-        ).configure()
+        children += IdeaKotlinPlatformDependencyResolutionDslHandle(
+            toolingModelBuilder, constraint, this,
+        ).apply(configure)
     }
 
 
     @ExternalVariantPlatformDependencyResolutionDsl
-    fun variant(configure: VariantDslHandle.() -> Unit) {
-        val variant = VariantDslHandle().apply(configure)
+    fun withPlatformResolutionAttributes(
+        setAttributes: KotlinGradleFragmentConfigurationAttributesContext<KotlinGradleFragment>.() -> Unit
+    ) {
+        val additionalAttributes = FragmentAttributes(setAttributes)
+        this.platformResolutionAttributes = platformResolutionAttributes?.plus(additionalAttributes) ?: additionalAttributes
+    }
 
-        /*
-        toolingModelBuilder.registerDependencyResolver(
-            resolver = IdeaKotlinPlatformDependencyResolver(
-                binaryType = variant.variantBinaryType,
-                artifactViewAttributes = variant.variantAttributes
-            ),
-            phase = BinaryDependencyResolution,
-            constraint = constraint,
-            level = DependencyResolutionLevel.Special
-        )
+    @ExternalVariantPlatformDependencyResolutionDsl
+    fun artifactView(configure: ArtifactViewDslHandle.() -> Unit) {
+        artifactViewDslHandles += ArtifactViewDslHandle().apply(configure)
+    }
 
-         */
+    @ExternalVariantPlatformDependencyResolutionDsl
+    fun additionalDependencies(dependencyProvider: (KotlinGradleFragment) -> List<IdeaKotlinDependency>) {
+        this.additionalDependencies += IdeaKotlinDependencyResolver { fragment -> dependencyProvider(fragment).toSet() }
+    }
+
+    internal fun setup() {
+        children.forEach { child -> child.setup() }
+
+        val constraint = buildConstraint()
+        val platformResolutionAttributes = buildPlatformResolutionAttributes()
+
+        /* Setup artifact views */
+        artifactViewDslHandles.toList().forEach { artifactViewDslHandle ->
+            toolingModelBuilder.registerDependencyResolver(
+                IdeaKotlinPlatformDependencyResolver(
+                    binaryType = artifactViewDslHandle.artifactViewBinaryType,
+                    artifactResolution = ArtifactResolution.Variant(artifactViewDslHandle.artifactViewAttributes)
+                ),
+                constraint = FragmentConstraint.isVariant and constraint,
+                phase = DependencyResolutionPhase.BinaryDependencyResolution,
+                level = DependencyResolutionLevel.Overwrite
+            )
+
+            if (platformResolutionAttributes != null) {
+                toolingModelBuilder.registerDependencyResolver(
+                    IdeaKotlinPlatformDependencyResolver(
+                        binaryType = artifactViewDslHandle.artifactViewBinaryType,
+                        artifactResolution = ArtifactResolution.PlatformFragment(
+                            artifactViewAttributes = artifactViewDslHandle.artifactViewAttributes,
+                            platformResolutionAttributes = platformResolutionAttributes
+                        )
+                    ),
+                    constraint = !FragmentConstraint.isVariant and constraint,
+                    phase = DependencyResolutionPhase.BinaryDependencyResolution,
+                    level = DependencyResolutionLevel.Overwrite
+                )
+            }
+        }
+
+        /* Setup plain additional resolvers */
+        additionalDependencies.toList().forEach { additionalDependencyResolver ->
+            toolingModelBuilder.registerDependencyResolver(
+                resolver = additionalDependencyResolver,
+                constraint = constraint,
+                phase = DependencyResolutionPhase.BinaryDependencyResolution,
+                level = DependencyResolutionLevel.Overwrite
+            )
+        }
+    }
+
+    private fun buildConstraint(): FragmentConstraint {
+        val parentConstraint = parent?.buildConstraint() ?: return constraint
+        return parentConstraint and this.constraint
+    }
+
+    private fun buildPlatformResolutionAttributes(): FragmentAttributes<KotlinGradleFragment>? {
+        val parentAttributes = parent?.buildPlatformResolutionAttributes() ?: return this.platformResolutionAttributes
+        return parentAttributes + (this.platformResolutionAttributes ?: return parentAttributes)
     }
 }
 
