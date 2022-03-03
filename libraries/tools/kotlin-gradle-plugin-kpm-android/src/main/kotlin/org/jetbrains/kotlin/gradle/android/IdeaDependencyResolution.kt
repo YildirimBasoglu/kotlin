@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.gradle.android
 
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.builder.model.BuildType
 import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.attributes.java.TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE
@@ -69,72 +68,7 @@ internal fun KotlinPm20ProjectExtension.setupIdeaKotlinFragmentDependencyResolve
             }.toSet()
         },
         constraint = { androidDslKey in it.external },
-        priority = IdeaKotlinProjectModelBuilder.DependencyResolverPriority.High,
-        mode = IdeaKotlinProjectModelBuilder.DependencyResolverMode.Collaborative,
-        phase = IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.PlatformBinaryResolution
+        phase = IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.BinaryDependencyResolution,
+        level = IdeaKotlinProjectModelBuilder.DependencyResolutionLevel.Special
     )
-
-    /*
-    ideaKotlinProjectModelBuilder.registerPlatformDependencyResolver(
-        IdeaKotlinDependencyResolver resolve@{
-            project.getAndroidRuntimeJars().map { androidRuntimeJar ->
-                IdeaKotlinFragmentResolvedBinaryDependencyImpl(
-                    binaryType = CLASSPATH_BINARY_TYPE,
-                    binaryFile = androidRuntimeJar,
-                    coordinates = null
-                )
-            }.toSet()
-        }.withConstraint { fragment -> fragment !is KotlinGradleVariant && androidDslKey in fragment.external }
-    )
-
-     */
-
-    /*
-    ideaKotlinProjectModelBuilder.registerDependencyResolver(
-        (IdeaKotlinPlatformDependencyResolver(
-            binaryType = "manifest",
-            attributes = FragmentAttributes {
-                attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.MANIFEST.type)
-            }
-        ) + IdeaKotlinPlatformDependencyResolver(
-            binaryType = "resources",
-            attributes = FragmentAttributes {
-                attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.ANDROID_RES.type)
-            }
-        ) + IdeaKotlinPlatformDependencyResolver(
-            binaryType = "keep-rules",
-            attributes = FragmentAttributes {
-                attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.KEEP_RULES.type)
-            }
-        ) + IdeaKotlinPlatformDependencyResolver(
-            binaryType = "android-symbol",
-            attributes = FragmentAttributes {
-                attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.COMPILE_SYMBOL_LIST.type)
-            }
-        )).filterFragments { fragment -> androidDslKey in fragment.external }
-    )
-
-    ideaKotlinProjectModelBuilder.registerDependencyResolver(
-        IdeaKotlinPlatformDependencyResolver(
-            FragmentCompileDependenciesProvider,
-            binaryType = IdeaKotlinFragmentBinaryDependency.CLASSPATH_BINARY_TYPE,
-            attributes = FragmentAttributes {
-                attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.CLASSES_JAR.type)
-            }
-        ).filterFragments { fragment -> fragment !is KotlinGradleVariant && androidDslKey in fragment.external }
-    )
-
-    ideaKotlinProjectModelBuilder.registerDependencyResolver(
-        IdeaKotlinDependencyResolver resolve@{
-            project.getAndroidRuntimeJars().map { androidRuntimeJar ->
-                IdeaKotlinFragmentResolvedBinaryDependencyImpl(
-                    binaryType = IdeaKotlinFragmentBinaryDependency.CLASSPATH_BINARY_TYPE,
-                    binaryFile = androidRuntimeJar,
-                    coordinates = null
-                )
-            }.toSet()
-        }.filterFragments { fragment -> fragment !is KotlinGradleVariant && androidDslKey in fragment.external }
-    )
-
-     */
 }

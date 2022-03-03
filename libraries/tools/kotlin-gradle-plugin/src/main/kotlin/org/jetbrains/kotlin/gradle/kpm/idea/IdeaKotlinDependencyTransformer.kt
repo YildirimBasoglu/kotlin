@@ -7,7 +7,7 @@ package org.jetbrains.kotlin.gradle.kpm.idea
 
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleFragment
 
-interface IdeaKotlinDependencyTransformer {
+fun interface IdeaKotlinDependencyTransformer {
     fun transform(
         fragment: KotlinGradleFragment, dependencies: Set<IdeaKotlinDependency>
     ): Set<IdeaKotlinDependency>

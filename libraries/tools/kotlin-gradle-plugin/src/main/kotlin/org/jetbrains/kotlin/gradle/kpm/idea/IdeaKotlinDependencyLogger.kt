@@ -7,13 +7,13 @@ package org.jetbrains.kotlin.gradle.kpm.idea
 
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleFragment
 
-object IdeaKotlinDependencyLogger : IdeaKotlinDependencyTransformer {
-    override fun transform(
+object IdeaKotlinDependencyLogger : IdeaKotlinDependencyEffect {
+    override fun invoke(
         fragment: KotlinGradleFragment, dependencies: Set<IdeaKotlinDependency>
-    ): Set<IdeaKotlinDependency> = dependencies.also {
-        val fragmentPathRegex = fragment.project.properties["idea.kotlin.log.dependencies"]?.toString() ?: return@also
+    ) {
+        val fragmentPathRegex = fragment.project.properties["idea.kotlin.log.dependencies"]?.toString() ?: return
         val fragmentPath = "${fragment.project.path}/${fragment.containingModule.name}/${fragment.name}"
-        if (!fragmentPath.matches(Regex(fragmentPathRegex))) return@also
+        if (!fragmentPath.matches(Regex(fragmentPathRegex))) return
 
         val message = buildString {
             appendLine("Resolved dependencies for ${fragment.project.path}/${fragment.containingModule.name}/${fragment.name}")
@@ -24,3 +24,4 @@ object IdeaKotlinDependencyLogger : IdeaKotlinDependencyTransformer {
         fragment.project.logger.quiet(message)
     }
 }
+

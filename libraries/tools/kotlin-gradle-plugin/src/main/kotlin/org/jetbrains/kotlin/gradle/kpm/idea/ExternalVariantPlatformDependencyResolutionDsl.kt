@@ -8,12 +8,8 @@
 package org.jetbrains.kotlin.gradle.kpm.idea
 
 import org.jetbrains.kotlin.gradle.kpm.external.ExternalVariantApi
-import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.MetadataBinaryResolution
-import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.PlatformBinaryResolution
-import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolverMode.Collaborative
-import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolverMode.Terminal
-import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolverPriority.High
-import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolverPriority.Medium
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolutionLevel
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.FragmentAttributes
 
@@ -31,7 +27,7 @@ fun KotlinPm20ProjectExtension.configureIdeaPlatformDependencyResolution(
 @ExternalVariantPlatformDependencyResolutionDsl
 class IdeaKotlinPlatformDependencyResolutionDslHandle(
     private val toolingModelBuilder: IdeaKotlinProjectModelBuilder,
-    private val constraint: IdeaKotlinDependencyResolverConstraint = IdeaKotlinDependencyResolverConstraint.unconstrained
+    private val constraint: KotlinFragmentConstraint = KotlinFragmentConstraint.unconstrained
 ) {
     @ExternalVariantPlatformDependencyResolutionDsl
     class VariantDslHandle {
@@ -50,7 +46,7 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle(
 
     @ExternalVariantPlatformDependencyResolutionDsl
     fun withConstraint(
-        constraint: IdeaKotlinDependencyResolverConstraint,
+        constraint: KotlinFragmentConstraint,
         configure: IdeaKotlinPlatformDependencyResolutionDslHandle.() -> Unit
     ) {
         IdeaKotlinPlatformDependencyResolutionDslHandle(
@@ -63,30 +59,13 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle(
     fun variant(configure: VariantDslHandle.() -> Unit) {
         val variant = VariantDslHandle().apply(configure)
         toolingModelBuilder.registerDependencyResolver(
-            resolver = IdeaKotlinDependencyResolver.Empty,
-            constraint = constraint,
-            phase = MetadataBinaryResolution,
-            priority = High,
-            mode = Terminal
-        )
-
-        toolingModelBuilder.registerDependencyResolver(
-            resolver = IdeaKotlinDependencyResolver.Empty,
-            constraint = constraint,
-            phase = PlatformBinaryResolution,
-            priority = Medium,
-            mode = Terminal
-        )
-
-        toolingModelBuilder.registerDependencyResolver(
             resolver = IdeaKotlinPlatformDependencyResolver(
                 binaryType = variant.variantBinaryType,
                 artifactViewAttributes = variant.variantAttributes
             ),
-            phase = PlatformBinaryResolution,
+            phase = BinaryDependencyResolution,
             constraint = constraint,
-            priority = High,
-            mode = Collaborative
+            level = DependencyResolutionLevel.Special
         )
     }
 }

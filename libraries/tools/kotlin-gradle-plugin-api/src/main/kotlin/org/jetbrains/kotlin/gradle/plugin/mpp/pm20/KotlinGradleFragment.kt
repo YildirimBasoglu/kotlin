@@ -60,3 +60,7 @@ interface KotlinGradleFragment : KotlinModuleFragment, HasKotlinDependencies, Ko
 
 val KotlinGradleFragment.refinesClosure: Set<KotlinGradleFragment>
     get() = (this as KotlinModuleFragment).refinesClosure.mapTo(mutableSetOf()) { it as KotlinGradleFragment }
+
+
+val KotlinGradleFragment.path: String
+    get() = "${project.path}/${containingModule.name}/$fragmentName"
