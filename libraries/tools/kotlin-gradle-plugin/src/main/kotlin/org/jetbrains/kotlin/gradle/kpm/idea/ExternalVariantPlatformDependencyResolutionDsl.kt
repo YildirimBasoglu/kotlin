@@ -8,7 +8,7 @@
 package org.jetbrains.kotlin.gradle.kpm.idea
 
 import org.jetbrains.kotlin.gradle.kpm.external.ExternalVariantApi
-import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolutionLevel
+import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.*
 import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.FragmentAttributes
@@ -27,7 +27,7 @@ fun KotlinPm20ProjectExtension.configureIdeaPlatformDependencyResolution(
 @ExternalVariantPlatformDependencyResolutionDsl
 class IdeaKotlinPlatformDependencyResolutionDslHandle(
     private val toolingModelBuilder: IdeaKotlinProjectModelBuilder,
-    private val constraint: KotlinFragmentConstraint = KotlinFragmentConstraint.unconstrained
+    private val constraint: FragmentConstraint = FragmentConstraint.unconstrained
 ) {
     @ExternalVariantPlatformDependencyResolutionDsl
     class VariantDslHandle {
@@ -46,7 +46,7 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle(
 
     @ExternalVariantPlatformDependencyResolutionDsl
     fun withConstraint(
-        constraint: KotlinFragmentConstraint,
+        constraint: FragmentConstraint,
         configure: IdeaKotlinPlatformDependencyResolutionDslHandle.() -> Unit
     ) {
         IdeaKotlinPlatformDependencyResolutionDslHandle(
@@ -58,6 +58,8 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle(
     @ExternalVariantPlatformDependencyResolutionDsl
     fun variant(configure: VariantDslHandle.() -> Unit) {
         val variant = VariantDslHandle().apply(configure)
+
+        /*
         toolingModelBuilder.registerDependencyResolver(
             resolver = IdeaKotlinPlatformDependencyResolver(
                 binaryType = variant.variantBinaryType,
@@ -67,6 +69,8 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle(
             constraint = constraint,
             level = DependencyResolutionLevel.Special
         )
+
+         */
     }
 }
 

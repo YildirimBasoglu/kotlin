@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.utils.addToStdlib.ifNotEmpty
 object IdeaKotlinMissingFileDependencyLogger : IdeaKotlinDependencyEffect {
     override fun invoke(fragment: KotlinGradleFragment, dependencies: Set<IdeaKotlinDependency>) {
         dependencies.filterIsInstance<IdeaKotlinResolvedBinaryDependency>()
-            .filter { it.binaryFile.exists() }
+            .filter { !it.binaryFile.exists() }
             .ifNotEmpty { fragment.project.logger.warn(buildWarningMessage(fragment, this)) }
     }
 

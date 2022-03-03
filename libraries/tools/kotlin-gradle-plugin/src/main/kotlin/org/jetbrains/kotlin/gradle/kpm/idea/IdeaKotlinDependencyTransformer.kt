@@ -11,12 +11,6 @@ fun interface IdeaKotlinDependencyTransformer {
     fun transform(
         fragment: KotlinGradleFragment, dependencies: Set<IdeaKotlinDependency>
     ): Set<IdeaKotlinDependency>
-
-    object Empty : IdeaKotlinDependencyTransformer {
-        override fun transform(
-            fragment: KotlinGradleFragment, dependencies: Set<IdeaKotlinDependency>
-        ): Set<IdeaKotlinDependency> = dependencies
-    }
 }
 
 fun IdeaKotlinDependencyResolver.withTransformer(transformer: IdeaKotlinDependencyTransformer) = IdeaKotlinDependencyResolver { fragment ->

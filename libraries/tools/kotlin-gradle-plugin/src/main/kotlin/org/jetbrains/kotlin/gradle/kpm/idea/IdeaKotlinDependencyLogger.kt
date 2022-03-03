@@ -17,7 +17,7 @@ object IdeaKotlinDependencyLogger : IdeaKotlinDependencyEffect {
 
         val message = buildString {
             appendLine("Resolved dependencies for ${fragment.project.path}/${fragment.containingModule.name}/${fragment.name}")
-            dependencies.forEach { dependency -> appendLine(dependency.toString()) }
+            dependencies.forEach { dependency -> appendLine("> $dependency") }
             appendLine()
         }
 
