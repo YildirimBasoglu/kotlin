@@ -2,6 +2,7 @@
 
 package org.jetbrains.kotlin.gradle.kpm.idea
 
+import org.jetbrains.kotlin.compilerRunner.konanHome
 import org.jetbrains.kotlin.gradle.kpm.external.ExternalVariantApi
 import org.jetbrains.kotlin.gradle.kpm.idea.IdeaKotlinProjectModelBuilder.FragmentConstraint
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native
@@ -10,7 +11,6 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinVariant
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleFragment
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinPm20ProjectExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.containingVariants
-import org.jetbrains.kotlin.gradle.testing.compilerRunner.konanHome
 import java.io.File
 
 internal interface IdeaKotlinProjectModelBuildingContext {

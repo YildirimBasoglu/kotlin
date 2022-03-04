@@ -8,11 +8,11 @@ package org.jetbrains.kotlin.gradle.kpm.idea
 import org.gradle.api.Project
 import org.jetbrains.kotlin.commonizer.KonanDistribution
 import org.jetbrains.kotlin.commonizer.platformLibsDir
+import org.jetbrains.kotlin.compilerRunner.konanHome
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinGradleFragment
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinNativeVariantInternal
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.containingVariants
-import org.jetbrains.kotlin.gradle.testing.compilerRunner.konanHome
 import org.jetbrains.kotlin.library.ToolingSingleFileKlibResolveStrategy
 import org.jetbrains.kotlin.library.resolveSingleFileKlib
 import org.jetbrains.kotlin.library.shortName
