@@ -38,16 +38,16 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle internal constructor(
     var platformResolutionAttributes: FragmentAttributes<KotlinGradleFragment>? = null
 
     @ExternalVariantPlatformDependencyResolutionDsl
-    class ArtifactViewDslHandle {
+    class ArtifactViewDslHandle(
+        @property:ExternalVariantPlatformDependencyResolutionDsl
+        var binaryType: String
+    ) {
         @ExternalVariantPlatformDependencyResolutionDsl
-        var artifactViewBinaryType: String = IdeaKotlinDependency.CLASSPATH_BINARY_TYPE
+        var attributes: FragmentAttributes<KotlinGradleFragment> = FragmentAttributes { }
 
         @ExternalVariantPlatformDependencyResolutionDsl
-        var artifactViewAttributes: FragmentAttributes<KotlinGradleFragment> = FragmentAttributes { }
-
-        @ExternalVariantPlatformDependencyResolutionDsl
-        fun artifactViewAttributes(setAttributes: KotlinGradleFragmentConfigurationAttributesContext<KotlinGradleFragment>.() -> Unit) {
-            artifactViewAttributes += FragmentAttributes(setAttributes)
+        fun attributes(setAttributes: KotlinGradleFragmentConfigurationAttributesContext<KotlinGradleFragment>.() -> Unit) {
+            attributes += FragmentAttributes(setAttributes)
         }
     }
 
@@ -71,8 +71,8 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle internal constructor(
     }
 
     @ExternalVariantPlatformDependencyResolutionDsl
-    fun artifactView(configure: ArtifactViewDslHandle.() -> Unit) {
-        artifactViewDslHandles += ArtifactViewDslHandle().apply(configure)
+    fun artifactView(binaryType: String, configure: ArtifactViewDslHandle.() -> Unit = {}) {
+        artifactViewDslHandles += ArtifactViewDslHandle(binaryType).apply(configure)
     }
 
     @ExternalVariantPlatformDependencyResolutionDsl
@@ -90,8 +90,8 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle internal constructor(
         artifactViewDslHandles.toList().forEach { artifactViewDslHandle ->
             toolingModelBuilder.registerDependencyResolver(
                 IdeaKotlinPlatformDependencyResolver(
-                    binaryType = artifactViewDslHandle.artifactViewBinaryType,
-                    artifactResolution = ArtifactResolution.Variant(artifactViewDslHandle.artifactViewAttributes)
+                    binaryType = artifactViewDslHandle.binaryType,
+                    artifactResolution = ArtifactResolution.Variant(artifactViewDslHandle.attributes)
                 ),
                 constraint = FragmentConstraint.isVariant and constraint,
                 phase = DependencyResolutionPhase.BinaryDependencyResolution,
@@ -101,9 +101,9 @@ class IdeaKotlinPlatformDependencyResolutionDslHandle internal constructor(
             if (platformResolutionAttributes != null) {
                 toolingModelBuilder.registerDependencyResolver(
                     IdeaKotlinPlatformDependencyResolver(
-                        binaryType = artifactViewDslHandle.artifactViewBinaryType,
+                        binaryType = artifactViewDslHandle.binaryType,
                         artifactResolution = ArtifactResolution.PlatformFragment(
-                            artifactViewAttributes = artifactViewDslHandle.artifactViewAttributes,
+                            artifactViewAttributes = artifactViewDslHandle.attributes,
                             platformResolutionAttributes = platformResolutionAttributes
                         )
                     ),
