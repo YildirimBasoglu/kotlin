@@ -47,6 +47,13 @@ internal fun IdeaKotlinProjectModelBuilder.Companion.default(
     )
 
     registerDependencyResolver(
+        resolver = IdeaKotlinNativePlatformDependencyResolver(),
+        constraint = IdeaKotlinProjectModelBuilder.FragmentConstraint.isNative,
+        phase = IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.BinaryDependencyResolution,
+        level = IdeaKotlinProjectModelBuilder.DependencyResolutionLevel.Default
+    )
+
+    registerDependencyResolver(
         resolver = IdeaKotlinSourcesAndDocumentationResolver(),
         constraint = IdeaKotlinProjectModelBuilder.FragmentConstraint.unconstrained,
         phase = IdeaKotlinProjectModelBuilder.DependencyResolutionPhase.PostDependencyResolution,

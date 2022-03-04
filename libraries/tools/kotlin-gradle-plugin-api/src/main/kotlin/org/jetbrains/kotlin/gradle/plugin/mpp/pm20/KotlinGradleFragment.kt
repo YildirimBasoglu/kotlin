@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.gradle.plugin.HasKotlinDependencies
 import org.jetbrains.kotlin.gradle.plugin.LanguageSettingsBuilder
 import org.jetbrains.kotlin.project.model.KotlinModuleFragment
 import org.jetbrains.kotlin.project.model.refinesClosure
+import org.jetbrains.kotlin.project.model.utils.variantsContainingFragment
 
 interface KotlinGradleFragment : KotlinModuleFragment, HasKotlinDependencies, KotlinFragmentDependencyConfigurations, Named {
     override val kotlinSourceRoots: SourceDirectorySet
@@ -64,3 +65,7 @@ val KotlinGradleFragment.refinesClosure: Set<KotlinGradleFragment>
 
 val KotlinGradleFragment.path: String
     get() = "${project.path}/${containingModule.name}/$fragmentName"
+
+val KotlinGradleFragment.containingVariants: Set<KotlinGradleVariant>
+    get() = containingModule.variantsContainingFragment(this)
+        .map { it as KotlinGradleVariant }.toSet()
