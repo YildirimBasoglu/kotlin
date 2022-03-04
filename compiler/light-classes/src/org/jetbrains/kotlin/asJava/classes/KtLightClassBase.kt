@@ -20,14 +20,14 @@ import com.intellij.navigation.ItemPresentationProviders
 import com.intellij.psi.*
 import com.intellij.psi.impl.PsiClassImplUtil
 import com.intellij.psi.impl.light.AbstractLightClass
-import com.intellij.psi.impl.source.PsiExtensibleClass
 import org.jetbrains.kotlin.analyzer.KotlinModificationTrackerService
 import org.jetbrains.kotlin.asJava.elements.KtLightFieldImpl
 import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
 import org.jetbrains.kotlin.idea.KotlinLanguage
 
-abstract class KtLightClassBase protected constructor(manager: PsiManager)
-    : AbstractLightClass(manager, KotlinLanguage.INSTANCE), KtLightClass, PsiExtensibleClass {
+abstract class KtLightClassBase protected constructor(
+    manager: PsiManager
+) : AbstractLightClass(manager, KotlinLanguage.INSTANCE), KtExtensibleLightClass {
     protected open val myInnersCache = KotlinClassInnerStuffCache(
         myClass = this,
         dependencies = listOf(KotlinModificationTrackerService.getInstance(manager.project).outOfBlockModificationTracker),
