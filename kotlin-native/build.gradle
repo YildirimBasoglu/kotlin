@@ -246,9 +246,13 @@ task shadowJar(type: ShadowJar) {
 }
 
 task distCompiler(type: Copy) {
-    dependsOn ":kotlin-native:dependencies:update"
-    dependsOn ':kotlin-native:shadowJar'
-    dependsOn ":kotlin-native-compiler-embeddable:kotlin-native-compiler-embeddable"
+    if (!UtilsKt.isDefaultNativeHome(project)) {
+        enabled = false
+    } else {
+        dependsOn ":kotlin-native:dependencies:update"
+        dependsOn ':kotlin-native:shadowJar'
+        dependsOn ":kotlin-native-compiler-embeddable:kotlin-native-compiler-embeddable"
+    }
 
     destinationDir distDir
 
